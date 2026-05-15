@@ -5,7 +5,7 @@ import json
 import firebase_admin
 from firebase_admin import credentials
 
-GEMINI_API_KEY = "cccccccccccccccccccccccccccccccU"
+GEMINI_API_KEY = "cccccccccccccccccccccccccccccccU"   #your gemini api key here
 genai.configure(api_key=GEMINI_API_KEY)
 
 cred = credentials.Certificate("serviceAccountKey.json")
