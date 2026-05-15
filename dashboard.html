@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - PocketMind</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --color-primary: #4f46e5;
+      --color-accent: #22c55e;
+      --color-danger: #ef4444;
+      --font-family: 'Inter', sans-serif;
+      --bg: #f7f9fc;
+      --surface: white;
+      --text-primary: #222;
+      --text-secondary: #555;
+      --border-color: #e5e7eb;
+      --shadow-color: rgba(0,0,0,0.05);
+      --dark-bg: #111827;
+      --dark-surface: #1f2937;
+      --dark-text-primary: #f9fafb;
+      --dark-text-secondary: #9ca3af;
+      --dark-border-color: #374151;
+      --dark-shadow-color: rgba(0,0,0,0.3);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); }
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    body.dark-theme {
+      --bg: var(--dark-bg);
+      --surface: var(--dark-surface);
+      --text-primary: var(--dark-text-primary);
+      --text-secondary: var(--dark-text-secondary);
+      --border-color: var(--dark-border-color);
+      --shadow-color: var(--dark-shadow-color);
+    }
+    .navbar {
+      background-color: var(--surface);
+      padding: 1rem 1.5rem;
+      box-shadow: 0 2px 4px var(--shadow-color);
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo { font-size: 1.25rem; font-weight: 700; color: var(--color-primary); text-decoration: none; }
+    .nav-actions { display: flex; align-items: center; gap: 1rem; }
+    .btn-theme {
+      background: none; border: 1px solid var(--border-color);
+      width: 40px; height: 40px; border-radius: 50%;
+      cursor: pointer; font-size: 1.2rem;
+      display: flex; justify-content: center; align-items: center;
+      color: var(--text-primary);
+    }
+    .main-content {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+    .page-header h1 { font-size: 2.5rem; color: var(--text-primary); margin-bottom: 2rem;}
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background-color: var(--surface);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px var(--shadow-color);
+    }
+    .stat-card h3 { color: var(--text-secondary); font-size: 1rem; margin-bottom: 0.5rem; }
+    .stat-card p { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); }
+    
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    @media (min-width: 992px) {
+        .dashboard-layout {
+            grid-template-columns: 1.5fr 1fr;
+        }
+    }
+    .main-panel, .sidebar {
+        background-color: var(--surface);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px var(--shadow-color);
+    }
+    .sidebar h2 { margin-bottom: 1.5rem; }
+    .transaction-list { list-style: none; max-height: 400px; overflow-y: auto; padding-right: 0.5rem;}
+    .transaction-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .transaction-list li:last-child { border-bottom: none; }
+    .delete-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 1rem;
+        margin-left: 1rem;
+    }
+    .delete-btn:hover { color: var(--color-danger); }
+    
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: var(--bg);
+        color: var(--text-primary);
+    }
+    .form-button {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        background-color: var(--color-primary);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 1rem;
+    }
+    .form-button-secondary {
+        background-color: var(--text-secondary);
+    }
+    #other-category-group {
+        display: none;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">PocketMind</a>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="btn-theme">🌙</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+        <h1>Dashboard</h1>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Income</h3>
+            <p id="total-income">₹0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Expenses</h3>
+            <p id="total-expenses">₹0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Savings</h3>
+            <p id="total-savings">₹0</p>
+        </div>
+    </div>
+
+    <div class="dashboard-layout">
+        <div class="main-panel">
+            <div class="chart-container" style="box-shadow: none; padding: 0;">
+                <canvas id="expense-chart"></canvas>
+            </div>
+             <div class="transactions-container" style="margin-top: 2rem;">
+                <h3>All Transactions</h3>
+                <ul class="transaction-list" id="transaction-list"></ul>
+            </div>
+        </div>
+        <aside class="sidebar">
+            <h2>Set/Update Income</h2>
+            <form id="income-form">
+                <div class="form-group">
+                    <label for="income-input">Monthly Income (₹)</label>
+                    <input type="number" id="income-input" placeholder="e.g., 75000" required>
+                </div>
+                <button type="submit" class="form-button form-button-secondary">Set Income</button>
+            </form>
+            <hr style="margin: 2rem 0; border-color: var(--border-color);">
+            <h2>Add Expense</h2>
+            <form id="add-expense-form">
+                <div class="form-group">
+                    <label for="expense-amount">Amount (₹)</label>
+                    <input type="number" id="expense-amount" placeholder="e.g., 800" required>
+                </div>
+                <div class="form-group">
+                    <label for="expense-category">Category</label>
+                    <select id="expense-category">
+                        <option value="Food">Food</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Bills">Bills</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Other">Other...</option>
+                    </select>
+                </div>
+                <div class="form-group" id="other-category-group">
+                    <label for="other-category-input">Specify Category</label>
+                    <input type="text" id="other-category-input">
+                </div>
+                <button type="submit" class="form-button">Add Expense</button>
+            </form>
+        </aside>
+    </div>
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXsOsJknpYe9TqzZxu2BKSyaF4Rr1YXUE",
+      authDomain: "pocketmind-4701e.firebaseapp.com",
+      projectId: "pocketmind-4701e",
+      storageBucket: "pocketmind-4701e.appspot.com",
+      messagingSenderId: "1075115902682",
+      appId: "1:1075115902682:web:825c371fcf1ede508a87e3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      const addExpenseForm = document.getElementById('add-expense-form');
+      const incomeForm = document.getElementById('income-form');
+      const incomeInput = document.getElementById('income-input');
+      const transactionListEl = document.getElementById('transaction-list');
+      const expenseCategorySelect = document.getElementById('expense-category');
+      const otherCategoryGroup = document.getElementById('other-category-group');
+      const otherCategoryInput = document.getElementById('other-category-input');
+      
+      let myChart = null;
+      let currentUser = null;
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          currentUser = user;
+          loadDataAndRender();
+        } else {
+          window.location.href = '/';
+        }
+      });
+
+      if (themeToggleBtn) {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+          document.body.classList.add('dark-theme');
+          themeToggleBtn.textContent = '☀️';
+        } else {
+          themeToggleBtn.textContent = '🌙';
+        }
+        themeToggleBtn.addEventListener('click', () => {
+          document.body.classList.toggle('dark-theme');
+          let theme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+          themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+          localStorage.setItem('theme', theme);
+        });
+      }
+      
+      async function saveIncome(income) {
+        if (!currentUser) return;
+        await db.collection('users').doc(currentUser.uid).set({ income: income }, { merge: true });
+      }
+
+      function renderUI(income, transactions) {
+        incomeInput.value = income > 0 ? income : '';
+        const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
+        const totalSavings = income - totalExpenses;
+
+        document.getElementById('total-income').textContent = `₹${income.toLocaleString('en-IN')}`;
+        document.getElementById('total-expenses').textContent = `₹${totalExpenses.toLocaleString('en-IN')}`;
+        document.getElementById('total-savings').textContent = `₹${totalSavings.toLocaleString('en-IN')}`;
+        
+        transactionListEl.innerHTML = '';
+        if (transactions.length === 0) {
+            transactionListEl.innerHTML = '<li>No transactions yet.</li>';
+        } else {
+            transactions.forEach((t) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div>
+                        <span>${t.category}</span>
+                    </div>
+                    <div>
+                        <strong>₹${t.amount.toLocaleString('en-IN')}</strong>
+                        <button class="delete-btn" data-id="${t.id}">🗑️</button>
+                    </div>
+                `;
+                transactionListEl.appendChild(li);
+            });
+        }
+        renderChart(income, transactions);
+      }
+      
+      function renderChart(income, transactions) {
+        const ctx = document.getElementById('expense-chart').getContext('2d');
+        const spendingByCategory = transactions.reduce((acc, t) => {
+            acc[t.category] = (acc[t.category] || 0) + t.amount;
+            return acc;
+        }, {});
+
+        const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
+        const remainingIncome = income - totalExpenses > 0 ? income - totalExpenses : 0;
+
+        const labels = Object.keys(spendingByCategory);
+        const data = Object.values(spendingByCategory);
+
+        if (remainingIncome > 0 || (income > 0 && transactions.length === 0)) {
+            labels.push('Savings');
+            data.push(remainingIncome);
+        }
+
+        const chartData = {
+            labels: labels,
+            datasets: [{
+                label: 'Spending Overview',
+                data: data,
+                backgroundColor: ['#4f46e5', '#ef4444', '#f97316', '#8b5cf6', '#3b82f6', '#10b981', '#22c55e'],
+                hoverOffset: 4
+            }]
+        };
+        
+        if (myChart) myChart.destroy();
+        
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: chartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Income vs. Expenses' }
+                }
+            },
+        });
+      }
+      
+      function loadDataAndRender() {
+          if (!currentUser) return;
+          
+          db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+              const income = doc.exists ? doc.data().income || 0 : 0;
+              
+              db.collection('users').doc(currentUser.uid).collection('transactions').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                  const transactions = [];
+                  snapshot.forEach(doc => {
+                      transactions.push({ id: doc.id, ...doc.data() });
+                  });
+                  renderUI(income, transactions);
+              });
+          });
+      }
+
+      expenseCategorySelect.addEventListener('change', (e) => {
+          if (e.target.value === 'Other') {
+              otherCategoryGroup.style.display = 'block';
+              otherCategoryInput.required = true;
+          } else {
+              otherCategoryGroup.style.display = 'none';
+              otherCategoryInput.required = false;
+          }
+      });
+
+      incomeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newIncome = parseInt(incomeInput.value);
+        if (!isNaN(newIncome) && newIncome >= 0) {
+            await saveIncome(newIncome);
+        }
+      });
+
+      addExpenseForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentUser) return;
+
+        const amount = parseInt(document.getElementById('expense-amount').value);
+        let category = expenseCategorySelect.value;
+        
+        if (category === 'Other') {
+            category = otherCategoryInput.value.trim();
+        }
+
+        if (amount > 0 && category) {
+            await db.collection('users').doc(currentUser.uid).collection('transactions').add({
+                amount: amount,
+                category: category,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            addExpenseForm.reset();
+            otherCategoryGroup.style.display = 'none';
+            otherCategoryInput.required = false;
+        }
+      });
+      
+      transactionListEl.addEventListener('click', async (e) => {
+          if (e.target.classList.contains('delete-btn')) {
+              if (!currentUser) return;
+              const transactionId = e.target.dataset.id;
+              await db.collection('users').doc(currentUser.uid).collection('transactions').doc(transactionId).delete();
+          }
+      });
+    });
+  </script>
+</body>
+</html>

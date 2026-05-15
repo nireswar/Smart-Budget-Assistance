@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Insights - PocketMind</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-primary: #4f46e5;
+      --color-primary-light: #818cf8;
+      --color-accent: #22c55e;
+      --font-family: 'Inter', sans-serif;
+      --bg: #f7f9fc;
+      --surface: white;
+      --text-primary: #222;
+      --text-secondary: #555;
+      --border-color: #e5e7eb;
+      --shadow-color: rgba(0,0,0,0.05);
+      --dark-bg: #111827;
+      --dark-surface: #1f2937;
+      --dark-text-primary: #f9fafb;
+      --dark-text-secondary: #9ca3af;
+      --dark-border-color: #374151;
+      --dark-shadow-color: rgba(0,0,0,0.3);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    body.dark-theme {
+      --bg: var(--dark-bg);
+      --surface: var(--dark-surface);
+      --text-primary: var(--dark-text-primary);
+      --text-secondary: var(--dark-text-secondary);
+      --border-color: var(--dark-border-color);
+      --shadow-color: var(--dark-shadow-color);
+    }
+    .navbar {
+      background-color: var(--surface);
+      padding: 1rem 1.5rem;
+      box-shadow: 0 2px 4px var(--shadow-color);
+      position: sticky; top: 0; z-index: 1000;
+      transition: background-color 0.3s;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo { font-size: 1.25rem; font-weight: 700; color: var(--color-primary); text-decoration: none; }
+    .nav-actions { display: flex; align-items: center; gap: 1rem; }
+    .btn-theme, .btn-logout {
+      background: none; border: 1px solid var(--border-color);
+      width: 40px; height: 40px; border-radius: 50%;
+      cursor: pointer; font-size: 1.2rem;
+      display: flex; justify-content: center; align-items: center;
+      color: var(--text-primary);
+    }
+    .btn-logout { width: auto; padding: 0 1rem; font-size: 0.9rem; }
+    .main-content {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+    .page-header { text-align: center; margin-bottom: 2rem; }
+    .page-header h1 { font-size: 2.5rem; color: var(--text-primary); }
+    .page-header p { font-size: 1.1rem; color: var(--text-secondary); }
+    .chat-container {
+        background-color: var(--surface);
+        border-radius: 12px;
+        box-shadow: 0 4px 8px var(--shadow-color);
+        display: flex;
+        flex-direction: column;
+        height: 60vh;
+    }
+    .chat-display {
+        flex-grow: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+    .chat-message {
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        max-width: 80%;
+        white-space: pre-wrap;
+    }
+    .user-message {
+        background-color: var(--color-primary);
+        color: white;
+        align-self: flex-end;
+        margin-left: auto;
+    }
+    .ai-message {
+        background-color: var(--border-color);
+        color: var(--text-primary);
+        align-self: flex-start;
+    }
+    .chat-form {
+        display: flex;
+        padding: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .chat-form input {
+        flex-grow: 1;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: var(--bg);
+        color: var(--text-primary);
+    }
+    .chat-form button {
+        background-color: var(--color-accent);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        margin-left: 0.5rem;
+        cursor: pointer;
+        font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">PocketMind</a>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="btn-theme">🌙</button>
+        <button id="logout-btn" class="btn-logout" style="display: none;">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+        <h1>AI Financial Assistant</h1>
+        <p>Your smart guide for budgeting, saving, and planning.</p>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-display" id="chat-display">
+            <div class="chat-message ai-message">
+                Hello! You can ask me to plan a trip, suggest saving tips, or explain financial topics. How can I help?
+            </div>
+        </div>
+        <form class="chat-form" id="chat-form">
+            <input type="text" id="user-input" placeholder="e.g., Plan a trip to Goa for ₹5000..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXsOsJknpYe9TqzZxu2BKSyaF4Rr1YXUE",
+      authDomain: "pocketmind-4701e.firebaseapp.com",
+      projectId: "pocketmind-4701e",
+      storageBucket: "pocketmind-4701e.appspot.com",
+      messagingSenderId: "1075115902682",
+      appId: "1:1075115902682:web:825c371fcf1ede508a87e3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      const logoutBtn = document.getElementById('logout-btn');
+      const chatForm = document.getElementById('chat-form');
+      const userInput = document.getElementById('user-input');
+      const chatDisplay = document.getElementById('chat-display');
+      let currentUser = null;
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          currentUser = user;
+          logoutBtn.style.display = 'flex';
+        } else {
+          window.location.href = '/';
+        }
+      });
+
+      if (themeToggleBtn) {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+          document.body.classList.add('dark-theme');
+          themeToggleBtn.textContent = '☀️';
+        } else {
+          themeToggleBtn.textContent = '🌙';
+        }
+        themeToggleBtn.addEventListener('click', () => {
+          document.body.classList.toggle('dark-theme');
+          let theme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+          themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+          localStorage.setItem('theme', theme);
+        });
+      }
+
+      function addMessageToDisplay(message, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}-message`;
+        messageDiv.textContent = message;
+        chatDisplay.appendChild(messageDiv);
+        chatDisplay.scrollTop = chatDisplay.scrollHeight;
+      }
+      
+      async function handleChatSubmit(e) {
+        e.preventDefault();
+        const question = userInput.value.trim();
+        if (!question || !currentUser) return;
+
+        addMessageToDisplay(question, 'user');
+        userInput.value = '';
+        addMessageToDisplay('Thinking...', 'ai');
+
+        try {
+          const userDoc = await db.collection('users').doc(currentUser.uid).get();
+          const income = userDoc.exists ? userDoc.data().income || 0 : 0;
+          
+          const transactionsSnapshot = await db.collection('users').doc(currentUser.uid).collection('transactions').get();
+          const transactions = [];
+          transactionsSnapshot.forEach(doc => {
+              transactions.push(doc.data());
+          });
+          
+          const contextData = `
+              - Monthly Income: ₹${income}
+              - Transactions: ${JSON.stringify(transactions)}
+          `;
+
+          const res = await fetch('/api/insights', {
+              method: 'POST',
+              headers: {
+              'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ question: question, context: contextData })
+          });
+
+          if (!res.ok) {
+              throw new Error(`Server error: ${res.status}`);
+          }
+
+          const data = await res.json();
+          
+          const lastMessage = chatDisplay.querySelector('.ai-message:last-child');
+          if (lastMessage && lastMessage.textContent === "Thinking...") {
+            lastMessage.remove();
+          }
+
+          addMessageToDisplay(data.answer, 'ai');
+
+        } catch (err) {
+          console.error("Error contacting AI:", err);
+          const lastMessage = chatDisplay.querySelector('.ai-message:last-child');
+          if (lastMessage && lastMessage.textContent === "Thinking...") {
+            lastMessage.textContent = "Sorry, something went wrong. Please try again.";
+          } else {
+            addMessageToDisplay("Sorry, something went wrong. Please try again.", 'ai');
+          }
+        }
+      }
+
+      chatForm.addEventListener('submit', handleChatSubmit);
+
+      logoutBtn.addEventListener('click', () => {
+          auth.signOut().then(() => {
+              window.location.href = '/';
+          });
+      });
+    });
+  </script>
+</body>
+</html>

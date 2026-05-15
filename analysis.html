@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysis Tool - PocketMind</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-primary: #4f46e5;
+      --color-primary-light: #818cf8;
+      --color-accent: #22c55e;
+      --color-need: #ef4444; /* Red for Needs */
+      --color-want: #3b82f6; /* Blue for Wants */
+      --font-family: 'Inter', sans-serif;
+      --bg: #f7f9fc;
+      --surface: white;
+      --text-primary: #222;
+      --text-secondary: #555;
+      --border-color: #e5e7eb;
+      --shadow-color: rgba(0,0,0,0.05);
+      --dark-bg: #111827;
+      --dark-surface: #1f2937;
+      --dark-text-primary: #f9fafb;
+      --dark-text-secondary: #9ca3af;
+      --dark-border-color: #374151;
+      --dark-shadow-color: rgba(0,0,0,0.3);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    body.dark-theme {
+      --bg: var(--dark-bg);
+      --surface: var(--dark-surface);
+      --text-primary: var(--dark-text-primary);
+      --text-secondary: var(--dark-text-secondary);
+      --border-color: var(--dark-border-color);
+      --shadow-color: var(--dark-shadow-color);
+    }
+    .navbar {
+      background-color: var(--surface);
+      padding: 1rem 1.5rem;
+      box-shadow: 0 2px 4px var(--shadow-color);
+      position: sticky; top: 0; z-index: 1000;
+      transition: background-color 0.3s;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo { font-size: 1.25rem; font-weight: 700; color: var(--color-primary); text-decoration: none; }
+    .nav-actions { display: flex; align-items: center; gap: 1rem; }
+    .btn-theme, .btn-logout {
+      background: none; border: 1px solid var(--border-color);
+      width: 40px; height: 40px; border-radius: 50%;
+      cursor: pointer; font-size: 1.2rem;
+      display: flex; justify-content: center; align-items: center;
+      color: var(--text-primary);
+    }
+    .btn-logout { width: auto; padding: 0 1rem; font-size: 0.9rem; }
+    .main-content {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+    .page-header { text-align: center; margin-bottom: 2rem; }
+    .page-header h1 { font-size: 2.5rem; color: var(--text-primary); }
+    .page-header p { font-size: 1.1rem; color: var(--text-secondary); }
+    
+    .input-form {
+        background-color: var(--surface);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px var(--shadow-color);
+    }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+    .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: var(--bg);
+        color: var(--text-primary);
+    }
+    .classify-button {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        background-color: var(--color-primary);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .classify-button:hover { background-color: #4338ca; }
+    .classify-button:disabled { background-color: var(--text-secondary); cursor: not-allowed; }
+
+    .result-area {
+        display: none;
+        background-color: var(--surface);
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px var(--shadow-color);
+        text-align: center;
+    }
+    .result-text { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-secondary); }
+    .result-tag {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        border-radius: 999px;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 1rem;
+    }
+    .result-tip {
+        font-size: 1rem;
+        color: var(--text-primary);
+        padding: 1rem;
+        background-color: var(--bg);
+        border-radius: 8px;
+        font-style: italic;
+    }
+    .tag-need { background-color: var(--color-need); }
+    .tag-want { background-color: var(--color-want); }
+    .tag-unknown { background-color: var(--text-secondary); }
+
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">PocketMind</a>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="btn-theme">🌙</button>
+        <button id="logout-btn" class="btn-logout" style="display: none;">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+        <h1>Expense Analyzer</h1>
+        <p>Get AI-powered classification and saving tips.</p>
+    </div>
+
+    <form class="input-form" id="classify-form">
+        <div class="form-group">
+            <label for="transaction-description">Expense Description</label>
+            <input type="text" id="transaction-description" placeholder="e.g., Dinner with friends" required>
+        </div>
+        <div class="form-group">
+            <label for="transaction-amount">Amount (₹)</label>
+            <input type="number" id="transaction-amount" placeholder="e.g., 1200" required>
+        </div>
+        <button type="submit" class="classify-button" id="classify-button">Analyze Expense</button>
+    </form>
+    
+    <div class="result-area" id="result-area">
+        <p class="result-text" id="result-text"></p>
+        <span class="result-tag" id="result-tag"></span>
+        <p class="result-tip" id="result-tip"></p>
+    </div>
+
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXsOsJknpYe9TqzZxu2BKSyaF4Rr1YXUE",
+      authDomain: "pocketmind-4701e.firebaseapp.com",
+      projectId: "pocketmind-4701e",
+      storageBucket: "pocketmind-4701e.appspot.com",
+      messagingSenderId: "1075115902682",
+      appId: "1:1075115902682:web:825c371fcf1ede508a87e3"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoutBtn = document.getElementById('logout-btn');
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      const classifyForm = document.getElementById('classify-form');
+      const descriptionInput = document.getElementById('transaction-description');
+      const amountInput = document.getElementById('transaction-amount');
+      const classifyButton = document.getElementById('classify-button');
+      const resultArea = document.getElementById('result-area');
+      const resultText = document.getElementById('result-text');
+      const resultTag = document.getElementById('result-tag');
+      const resultTip = document.getElementById('result-tip');
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          logoutBtn.style.display = 'flex';
+        } else {
+          window.location.href = '/';
+        }
+      });
+
+      if (themeToggleBtn) {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+          document.body.classList.add('dark-theme');
+          themeToggleBtn.textContent = '☀️';
+        } else {
+          themeToggleBtn.textContent = '🌙';
+        }
+        themeToggleBtn.addEventListener('click', () => {
+          document.body.classList.toggle('dark-theme');
+          let theme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+          themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+          localStorage.setItem('theme', theme);
+        });
+      }
+
+      async function analyzeExpenseWithBackend(description, amount) {
+        try {
+          const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description, amount })
+          });
+
+          if (!response.ok) {
+            console.error('API Error:', await response.json());
+            return { classification: 'Error', tip: 'Could not analyze the expense.' };
+          }
+          
+          const resultText = await response.json();
+          const parsedResult = JSON.parse(resultText);
+          return parsedResult;
+
+        } catch (error) {
+          console.error('Analysis Error:', error);
+          return { classification: 'Error', tip: 'There was a problem processing the AI response.' };
+        }
+      }
+
+      classifyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const description = descriptionInput.value;
+        const amount = amountInput.value;
+
+        classifyButton.textContent = 'Analyzing...';
+        classifyButton.disabled = true;
+        resultArea.style.display = 'none';
+
+        const analysis = await analyzeExpenseWithBackend(description, amount);
+
+        resultText.textContent = `${description} - ₹${amount}`;
+        resultTag.textContent = analysis.classification;
+        resultTip.textContent = `💡 AI Tip: ${analysis.tip}`;
+        
+        resultTag.className = 'result-tag';
+        if (analysis.classification === 'Need') {
+            resultTag.classList.add('tag-need');
+        } else if (analysis.classification === 'Want') {
+            resultTag.classList.add('tag-want');
+        } else {
+            resultTag.classList.add('tag-unknown');
+        }
+
+        resultArea.style.display = 'block';
+        classifyButton.textContent = 'Analyze Expense';
+        classifyButton.disabled = false;
+      });
+
+      logoutBtn.addEventListener('click', () => {
+          auth.signOut().then(() => {
+              window.location.href = '/';
+          });
+      });
+    });
+  </script>
+</body>
+</html>

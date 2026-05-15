@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payments Reminder - PocketMind</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-primary: #4f46e5;
+      --color-accent: #22c55e;
+      --color-warning: #f59e0b;
+      --color-danger: #ef4444;
+      --font-family: 'Inter', sans-serif;
+      --bg: #f7f9fc;
+      --surface: white;
+      --text-primary: #222;
+      --text-secondary: #555;
+      --border-color: #e5e7eb;
+      --shadow-color: rgba(0,0,0,0.05);
+      --dark-bg: #111827;
+      --dark-surface: #1f2937;
+      --dark-text-primary: #f9fafb;
+      --dark-text-secondary: #9ca3af;
+      --dark-border-color: #374151;
+      --dark-shadow-color: rgba(0,0,0,0.3);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); }
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    body.dark-theme {
+      --bg: var(--dark-bg);
+      --surface: var(--dark-surface);
+      --text-primary: var(--dark-text-primary);
+      --text-secondary: var(--dark-text-secondary);
+      --border-color: var(--dark-border-color);
+      --shadow-color: var(--dark-shadow-color);
+    }
+    .navbar {
+      background-color: var(--surface);
+      padding: 1rem 1.5rem;
+      box-shadow: 0 2px 4px var(--shadow-color);
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo { font-size: 1.25rem; font-weight: 700; color: var(--color-primary); text-decoration: none; }
+    .nav-actions { display: flex; align-items: center; gap: 1rem; }
+    .btn-theme {
+      background: none; border: 1px solid var(--border-color);
+      width: 40px; height: 40px; border-radius: 50%;
+      cursor: pointer; font-size: 1.2rem;
+      display: flex; justify-content: center; align-items: center;
+      color: var(--text-primary);
+    }
+    .main-content {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1.5rem;
+    }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 2.5rem; color: var(--text-primary); }
+    .page-header p { font-size: 1.1rem; color: var(--text-secondary); }
+    
+    .reminder-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    @media (min-width: 768px) {
+        .reminder-layout { grid-template-columns: 1fr 1fr; }
+    }
+    .card {
+        background-color: var(--surface);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px var(--shadow-color);
+    }
+    .card h2 { margin-bottom: 1.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background-color: var(--bg);
+        color: var(--text-primary);
+    }
+    .form-button {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        background-color: var(--color-primary);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 1rem;
+    }
+    .reminder-list { list-style: none; }
+    .reminder-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+    .reminder-item.due-soon {
+        border-left: 5px solid var(--color-warning);
+        background-color: var(--bg);
+    }
+    .reminder-item.due-urgent {
+        border-left: 5px solid var(--color-danger);
+        background-color: var(--bg);
+    }
+    .reminder-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .reminder-info .name { font-weight: 600; }
+    .reminder-info .due-date { font-size: 0.9rem; color: var(--text-secondary); }
+    .reminder-actions { display: flex; align-items: center; gap: 1rem; }
+    .reminder-actions .amount { font-weight: 700; font-size: 1.1rem; }
+    .delete-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+    .delete-btn:hover { color: var(--color-danger); }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">PocketMind</a>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="btn-theme">🌙</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+        <h1>Payments Reminder</h1>
+        <p>Add your upcoming bills and get timely reminders.</p>
+    </div>
+
+    <div class="reminder-layout">
+        <div class="card">
+            <h2>Upcoming Payments</h2>
+            <div id="reminder-list"></div>
+        </div>
+        <div class="card">
+            <h2>Add New Reminder</h2>
+            <form id="add-reminder-form">
+                <div class="form-group">
+                    <label for="payment-name">Payment Name</label>
+                    <input type="text" id="payment-name" placeholder="e.g., Electricity Bill" required>
+                </div>
+                <div class="form-group">
+                    <label for="payment-amount">Amount (₹)</label>
+                    <input type="number" id="payment-amount" placeholder="e.g., 1800" required>
+                </div>
+                <div class="form-group">
+                    <label for="payment-date">Due Date</label>
+                    <input type="date" id="payment-date" required>
+                </div>
+                 <div class="form-group">
+                    <label for="reminder-days">Remind Me Before</label>
+                    <select id="reminder-days">
+                        <option value="3">3 Days</option>
+                        <option value="5">5 Days</option>
+                        <option value="7">7 Days</option>
+                        <option value="10">10 Days</option>
+                    </select>
+                </div>
+                <button type="submit" class="form-button">Add Reminder</button>
+            </form>
+        </div>
+    </div>
+  </main>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXsOsJknpYe9TqzZxu2BKSyaF4Rr1YXUE",
+      authDomain: "pocketmind-4701e.firebaseapp.com",
+      projectId: "pocketmind-4701e",
+      storageBucket: "pocketmind-4701e.appspot.com",
+      messagingSenderId: "1075115902682",
+      appId: "1:1075115902682:web:825c371fcf1ede508a87e3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      const reminderListEl = document.getElementById('reminder-list');
+      const addReminderForm = document.getElementById('add-reminder-form');
+      let currentUser = null;
+
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          currentUser = user;
+          loadReminders();
+        } else {
+          window.location.href = '/';
+        }
+      });
+
+      if (themeToggleBtn) {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+          document.body.classList.add('dark-theme');
+          themeToggleBtn.textContent = '☀️';
+        } else {
+          themeToggleBtn.textContent = '🌙';
+        }
+        themeToggleBtn.addEventListener('click', () => {
+          document.body.classList.toggle('dark-theme');
+          let theme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+          themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+          localStorage.setItem('theme', theme);
+        });
+      }
+
+      function displayReminders(reminders) {
+        reminders.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        reminderListEl.innerHTML = '';
+
+        if (reminders.length === 0) {
+            reminderListEl.innerHTML = '<p>No payment reminders set yet.</p>';
+            return;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        reminders.forEach((reminder) => {
+            const dueDate = new Date(reminder.date);
+            const timeDiff = dueDate.getTime() - today.getTime();
+            const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+            let statusClass = '';
+            if (dayDiff <= 2) {
+                statusClass = 'due-urgent';
+            } else if (dayDiff <= reminder.days) {
+                statusClass = 'due-soon';
+            }
+
+            const item = document.createElement('div');
+            item.className = `reminder-item ${statusClass}`;
+            item.innerHTML = `
+                <div class="reminder-info">
+                    <span class="name">${reminder.name}</span>
+                    <span class="due-date">Due on: ${dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+                <div class="reminder-actions">
+                    <span class="amount">₹${reminder.amount.toLocaleString('en-IN')}</span>
+                    <button class="delete-btn" data-id="${reminder.id}">🗑️</button>
+                </div>
+            `;
+            reminderListEl.appendChild(item);
+        });
+      }
+      
+      function loadReminders() {
+          if (!currentUser) return;
+          db.collection('users').doc(currentUser.uid).collection('reminders').onSnapshot(snapshot => {
+              const reminders = [];
+              snapshot.forEach(doc => {
+                  reminders.push({ id: doc.id, ...doc.data() });
+              });
+              displayReminders(reminders);
+          });
+      }
+
+      addReminderForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!currentUser) return;
+
+        const name = document.getElementById('payment-name').value;
+        const amount = parseInt(document.getElementById('payment-amount').value);
+        const date = document.getElementById('payment-date').value;
+        const days = parseInt(document.getElementById('reminder-days').value);
+        
+        if (name && amount > 0 && date && days) {
+            db.collection('users').doc(currentUser.uid).collection('reminders').add({
+                name,
+                amount,
+                date,
+                days,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            addReminderForm.reset();
+        }
+      });
+
+      reminderListEl.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            if (!currentUser) return;
+            const reminderId = e.target.dataset.id;
+            db.collection('users').doc(currentUser.uid).collection('reminders').doc(reminderId).delete();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
